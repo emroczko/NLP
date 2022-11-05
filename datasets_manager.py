@@ -1,10 +1,17 @@
 from enum import Enum
 import openpyxl
+import json
+import argparse
+
+from math import floor
+
+PROCESSED_DATASETS_FOLDER = "ProcessedDatasets/"
 
 
 class Label(Enum):
     POSITIVE = "pos"
     NEGATIVE = "neg"
+
 
 class Review:
     def __init__(self, text: str, label: str):
@@ -14,9 +21,25 @@ class Review:
     def __str__(self):
         return str(self.label) + " " + str(self.text)
 
+    def to_json(self):
+        return json.dumps(self, default=lambda o: o.__dict__)
+
+
+def restricted_float(x):
+    try:
+        x = float(x)
+    except ValueError:
+        raise argparse.ArgumentTypeError("%r not a floating-point literal" % (x,))
+
+    if x < 0.0 or x > 1.0:
+        raise argparse.ArgumentTypeError("%r not in range [0.0, 1.0]" % (x,))
+    return x
+
 
 def resolve_label(score_and_max: str) -> str:
-    scores_str = score_and_max.replace(',', '.').split('/')
+    scores_str = score_and_max \
+        .replace(",", ".") \
+        .split("/")
 
     max_score = int(scores_str[1])
     score = float(scores_str[0])
@@ -27,7 +50,7 @@ def resolve_label(score_and_max: str) -> str:
     return Label.NEGATIVE.value if score < max_score / 2 else Label.POSITIVE.value
 
 
-def parse_reviews(file_name: str) -> [Review]:
+def parse_reviews_from_excel(file_name: str) -> [Review]:
     reviews: [Review] = []
 
     file = openpyxl.load_workbook(file_name, data_only=True).active
@@ -35,11 +58,50 @@ def parse_reviews(file_name: str) -> [Review]:
     for row in file.iter_rows(min_row=2, min_col=2, max_col=3):
         label = resolve_label(row[1].value)
         review_description = row[0].value \
-            .replace('\n', ' ') \
-            .replace('<br>', ' ') \
-            .replace('</br>', ' ') \
-            .replace('<br/>', ' ')
+            .replace("\n", " ") \
+            .replace("<br>", " ") \
+            .replace("</br>", " ") \
+            .replace("<br/>", " ")
 
         reviews.append(Review(review_description, label))
 
+    print("Parsed reviews from excel file")
     return reviews
+
+
+def save_as_json(reviews: [Review], json_file_name: str):
+    with open(PROCESSED_DATASETS_FOLDER + json_file_name, "w") as outfile:
+        json.dump(reviews, outfile, default=vars, ensure_ascii=False)
+
+
+def create_train_and_test_datasets(reviews: [Review], train_test_ratio: float, result_files_prefix: str):
+    train_limit_index = floor(len(reviews) * train_test_ratio)
+
+    if result_files_prefix is not None:
+        result_files_prefix.join("_")
+
+    train_file_name = result_files_prefix + "train.json"
+    save_as_json(reviews[:train_limit_index], train_file_name)
+    print("Saved train file as {}".format(train_file_name))
+
+    test_file_name = result_files_prefix + "test.json"
+    save_as_json(reviews[train_limit_index:], test_file_name)
+    print("Saved test file as {}".format(test_file_name))
+
+    pass
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--dataset", help="Dataset file path", required=True)
+    parser.add_argument("-p", "--prefix", help="Prefix of created json files")
+    parser.add_argument("-r", "--ratio", help="Dataset train to test ratio", type=restricted_float,
+                        metavar="[0.0-1.0]", default=0.5)
+    args = parser.parse_args()
+
+    if args.dataset:
+        print("Dataset file: {}".format(args.dataset))
+        ratio = 0.5 if args.ratio is None else args.ratio
+        prefix = "" if args.prefix is None else args.prefix
+        create_train_and_test_datasets(parse_reviews_from_excel(args.dataset), ratio, prefix)

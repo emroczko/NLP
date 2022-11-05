@@ -1,7 +1,7 @@
 # NLP
 
-# Launching
+# Launching Dataset Manager
 
 ```
-python3 main.py -d=DatasetsInput/new.xlsx
+python3 datasets_manager.py -d=DatasetsInput/new.xlsx -r=0.6
 ```
