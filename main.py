@@ -1,17 +1,25 @@
-from abc import ABC
 import time
+from typing import Union, Tuple
+
 import torch
-from torch.utils.data import DataLoader, random_split
+from torch.utils.data import DataLoader, random_split, functional_datapipe
 from torchtext.data import to_map_style_dataset
+from torchtext.data.datasets_utils import _wrap_split_argument
 from torchtext.data.utils import get_tokenizer
 from torchdata.datapipes.iter import IterableWrapper, FileOpener, IterDataPipe
-from torchtext.datasets import AG_NEWS
+from torchtext.datasets import AG_NEWS, IMDB, SQuAD2
 from torchtext.vocab import build_vocab_from_iterator
 
 from model import TextClassificationModel
 
+NUM_LINES = {
+    "train": 40000,
+    "test": 28012,
+}
 
-class ParseCustomDataset(IterDataPipe, ABC):
+
+@functional_datapipe("read_dataset")
+class ParseCustomDataset(IterDataPipe):
 
     def __init__(self, source_datapipe) -> None:
         self.source_datapipe = source_datapipe
@@ -20,6 +28,14 @@ class ParseCustomDataset(IterDataPipe, ABC):
         for _, raw_json_data in self.source_datapipe:
             for element in raw_json_data:
                 yield element['label'], element['text']
+
+
+@_wrap_split_argument(("train", "test"))
+def create_dataset(root: str, split: Union[Tuple[str], str]):
+    dp = IterableWrapper(["ProcessedDatasets/reviews.json"])
+    dp = FileOpener(dp, mode='b')
+    dp = dp.parse_json_files()
+    return dp.read_dataset().shuffle().set_shuffle(False).sharding_filter()
 
 
 def train(dataloader):
@@ -62,7 +78,7 @@ def evaluate(dataloader):
 def collate_batch(batch):
     label_list, text_list, offsets = [], [], [0]
     for (_label, _text) in batch:
-        label_list.append(label_pipeline(_label))
+        label_list.append(_label)
         processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
         text_list.append(processed_text)
         offsets.append(processed_text.size(0))
@@ -86,15 +102,9 @@ def predict(text, text_pipeline):
 
 
 if __name__ == "__main__":
-    dp = IterableWrapper(["ProcessedDatasets/reviews.json"])
-    dp = FileOpener(dp, mode='b')
-    dp = dp.parse_json_files()
-
-    ########################################
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_iter = ParseCustomDataset(dp)
+    dataset = create_dataset(split='train')
 
     tokenizer = get_tokenizer('spacy', 'pl_core_news_md')
     # tokenizer1 = get_tokenizer('basic_english')
@@ -104,30 +114,24 @@ if __name__ == "__main__":
     # print(yield_tokens(train_iter))
     # train_iter1 = AG_NEWS(split='train')
 
-    vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
+    vocab = build_vocab_from_iterator(yield_tokens(dataset), specials=["<unk>"])
     vocab.set_default_index(vocab["<unk>"])
-    #
-    # print(vocab)
 
     text_pipeline = lambda x: vocab(tokenizer(x))
-    label_pipeline = lambda x: int(x) - 1
+    # label_pipeline = lambda x: int(x) - 1
 
     ########################################
 
     print(text_pipeline("super telewizor"))
 
-    # train_iter1 = AG_NEWS(split='train')
-
-    # print(train_iter1)
-    print(train_iter)
-
-    dataloader = DataLoader(train_iter, batch_size=8, shuffle=False, collate_fn=collate_batch)
-
     ########################################
-    num_class = len(set([label for (label, text) in train_iter]))
+    num_class = len(set([label for (label, text) in dataset]))
+
     vocab_size = len(vocab)
     emsize = 64
     model = TextClassificationModel(vocab_size, emsize, num_class).to(device)
+
+    print(dataset)
 
     ########################################
     # Hyperparameters
@@ -139,7 +143,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
     total_accu = None
-    train_iter, test_iter = AG_NEWS()
+    train_iter, test_iter = create_dataset()
     train_dataset = to_map_style_dataset(train_iter)
     test_dataset = to_map_style_dataset(test_iter)
     num_train = int(len(train_dataset) * 0.95)
@@ -168,15 +172,15 @@ if __name__ == "__main__":
                                                accu_val))
         print('-' * 59)
 
-    print('Checking the results of test dataset.')
-    accu_test = evaluate(test_dataloader)
-    print('test accuracy {:8.3f}'.format(accu_test))
-
-    ag_news_label = {1: "Positive",
-                     2: "Negative"}
-
-    ex_text_str = "Super mega TV!"
-
-    model = model.to("cpu")
-
-    print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
+    # print('Checking the results of test dataset.')
+    # accu_test = evaluate(test_dataloader)
+    # print('test accuracy {:8.3f}'.format(accu_test))
+    #
+    # ag_news_label = {1: "Positive",
+    #                  2: "Negative"}
+    #
+    # ex_text_str = "Super mega TV!"
+    #
+    # model = model.to("cpu")
+    #
+    # print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
