@@ -96,6 +96,7 @@ def create_datasets(reviews: [Review], result_files_prefix: str):
     file_name = result_files_prefix + "reviews.json"
     save_as_json(reviews, file_name)
     print("Saved dataset file as {}".format(file_name))
+    print("Number of reviews: {}".format(len(reviews)))
 
 
 if __name__ == "__main__":
