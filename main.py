@@ -1,41 +1,17 @@
 import time
-from typing import Union, Tuple
-
 import torch
-from torch.utils.data import DataLoader, random_split, functional_datapipe
+from torch.utils.data import DataLoader, random_split
 from torchtext.data import to_map_style_dataset
-from torchtext.data.datasets_utils import _wrap_split_argument
 from torchtext.data.utils import get_tokenizer
-from torchdata.datapipes.iter import IterableWrapper, FileOpener, IterDataPipe
-from torchtext.datasets import AG_NEWS, IMDB, SQuAD2
 from torchtext.vocab import build_vocab_from_iterator
 
+from reviews_dataset import reviews
 from model import TextClassificationModel
 
 NUM_LINES = {
     "train": 40000,
     "test": 28012,
 }
-
-
-@functional_datapipe("read_dataset")
-class ParseCustomDataset(IterDataPipe):
-
-    def __init__(self, source_datapipe) -> None:
-        self.source_datapipe = source_datapipe
-
-    def __iter__(self):
-        for _, raw_json_data in self.source_datapipe:
-            for element in raw_json_data:
-                yield 1 if element['label'] == 'pos' else 0, element['text']
-
-
-@_wrap_split_argument(("train", "test"))
-def create_dataset(root: str, split: Union[Tuple[str], str]):
-    dp = IterableWrapper(["ProcessedDatasets/reviews.json"])
-    dp = FileOpener(dp, mode='b')
-    dp = dp.parse_json_files()
-    return dp.read_dataset().shuffle().set_shuffle(False).sharding_filter()
 
 
 def train(dataloader):
@@ -104,7 +80,7 @@ def predict(text, text_pipeline):
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    dataset = create_dataset(split='train')
+    dataset = reviews(split='train')
 
     # print(next(iter(dataset)))
     tokenizer = get_tokenizer('spacy', 'pl_core_news_md')
@@ -144,7 +120,7 @@ if __name__ == "__main__":
     optimizer = torch.optim.SGD(model.parameters(), lr=LR)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, 1.0, gamma=0.1)
     total_accu = None
-    train_iter, test_iter = create_dataset()
+    train_iter, test_iter = reviews()
     train_dataset = to_map_style_dataset(train_iter)
     test_dataset = to_map_style_dataset(test_iter)
     num_train = int(len(train_dataset) * 0.95)
@@ -177,11 +153,14 @@ if __name__ == "__main__":
     accu_test = evaluate(test_dataloader)
     print('test accuracy {:8.3f}'.format(accu_test))
 
-    ag_news_label = {1: "Positive",
-                     2: "Negative"}
+    ag_news_label = {1: "Negative",
+                     2: "Positive"}
 
-    ex_text_str = "Super mega TV!"
+    ex_text_str1 = "Super mega telewizor!"
+    ex_text_str2 = "beznadziejny, fatalny, żenujący, tragedia, tandeta!"
 
     model = model.to("cpu")
 
-    print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
+    print("This is a %s review" % ag_news_label[predict(ex_text_str1, text_pipeline)])
+
+    print("This is a %s review" % ag_news_label[predict(ex_text_str2, text_pipeline)])
