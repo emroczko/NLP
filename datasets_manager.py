@@ -80,15 +80,22 @@ def create_train_and_test_datasets(reviews: [Review], train_test_ratio: float, r
     if result_files_prefix is not None:
         result_files_prefix.join("_")
 
-    train_file_name = result_files_prefix + "train.json"
+    train_file_name = result_files_prefix + "train_reviews.json"
     save_as_json(reviews[:train_limit_index], train_file_name)
     print("Saved train file as {}".format(train_file_name))
 
-    test_file_name = result_files_prefix + "test.json"
+    test_file_name = result_files_prefix + "test_reviews.json"
     save_as_json(reviews[train_limit_index:], test_file_name)
     print("Saved test file as {}".format(test_file_name))
 
-    pass
+
+def create_datasets(reviews: [Review], result_files_prefix: str):
+    if result_files_prefix is not None:
+        result_files_prefix.join("_")
+
+    file_name = result_files_prefix + "reviews.json"
+    save_as_json(reviews, file_name)
+    print("Saved dataset file as {}".format(file_name))
 
 
 if __name__ == "__main__":
@@ -96,12 +103,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--dataset", help="Dataset file path", required=True)
     parser.add_argument("-p", "--prefix", help="Prefix of created json files")
-    parser.add_argument("-r", "--ratio", help="Dataset train to test ratio", type=restricted_float,
+    parser.add_argument("-r", "--ratio", help="Dataset train to test ratio if data is to divide", type=restricted_float,
                         metavar="[0.0-1.0]", default=0.5)
+    parser.add_argument("-s", "--split", help="If present data will be split into train and test datasets")
     args = parser.parse_args()
 
     if args.dataset:
         print("Dataset file: {}".format(args.dataset))
-        ratio = 0.5 if args.ratio is None else args.ratio
+        parsed_reviews = parse_reviews_from_excel(args.dataset)
         prefix = "" if args.prefix is None else args.prefix
-        create_train_and_test_datasets(parse_reviews_from_excel(args.dataset), ratio, prefix)
+
+        if args.split:
+            ratio = 0.5 if args.ratio is None else args.ratio
+            create_train_and_test_datasets(parsed_reviews, ratio, prefix)
+        else:
+            create_datasets(parsed_reviews, prefix)
