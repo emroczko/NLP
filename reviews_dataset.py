@@ -4,6 +4,11 @@ from torch.utils.data import functional_datapipe, IterDataPipe
 from torchtext.data.datasets_utils import _wrap_split_argument
 from torchdata.datapipes.iter import IterableWrapper, FileOpener
 
+NUM_LINES = {
+    "train": 40000,
+    "test": 28012,
+}
+
 
 @_wrap_split_argument(("train", "test"))
 def reviews(root: str, split: Union[Tuple[str], str]):

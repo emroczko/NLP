@@ -8,12 +8,6 @@ from torchtext.vocab import build_vocab_from_iterator
 from reviews_dataset import reviews
 from model import TextClassificationModel
 
-NUM_LINES = {
-    "train": 40000,
-    "test": 28012,
-}
-
-
 def train(dataloader):
     model.train()
     total_acc, total_count = 0, 0
