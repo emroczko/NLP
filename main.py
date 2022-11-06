@@ -27,7 +27,7 @@ class ParseCustomDataset(IterDataPipe):
     def __iter__(self):
         for _, raw_json_data in self.source_datapipe:
             for element in raw_json_data:
-                yield element['label'], element['text']
+                yield 1 if element['label'] == 'pos' else 0, element['text']
 
 
 @_wrap_split_argument(("train", "test"))
@@ -47,6 +47,8 @@ def train(dataloader):
     for idx, (label, text, offsets) in enumerate(dataloader):
         optimizer.zero_grad()
         predicted_label = model(text, offsets)
+        print(predicted_label)
+        print(label)
         loss = criterion(predicted_label, label)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
@@ -78,7 +80,7 @@ def evaluate(dataloader):
 def collate_batch(batch):
     label_list, text_list, offsets = [], [], [0]
     for (_label, _text) in batch:
-        label_list.append(_label)
+        label_list.append(label_pipeline(_label))
         processed_text = torch.tensor(text_pipeline(_text), dtype=torch.int64)
         text_list.append(processed_text)
         offsets.append(processed_text.size(0))
@@ -106,6 +108,7 @@ if __name__ == "__main__":
 
     dataset = create_dataset(split='train')
 
+    print(next(iter(dataset)))
     tokenizer = get_tokenizer('spacy', 'pl_core_news_md')
     # tokenizer1 = get_tokenizer('basic_english')
 
@@ -118,7 +121,7 @@ if __name__ == "__main__":
     vocab.set_default_index(vocab["<unk>"])
 
     text_pipeline = lambda x: vocab(tokenizer(x))
-    # label_pipeline = lambda x: int(x) - 1
+    label_pipeline = lambda x: int(x) - 1
 
     ########################################
 
