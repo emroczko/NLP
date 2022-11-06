@@ -47,8 +47,6 @@ def train(dataloader):
     for idx, (label, text, offsets) in enumerate(dataloader):
         optimizer.zero_grad()
         predicted_label = model(text, offsets)
-        print(predicted_label)
-        print(label)
         loss = criterion(predicted_label, label)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 0.1)
@@ -108,24 +106,24 @@ if __name__ == "__main__":
 
     dataset = create_dataset(split='train')
 
-    print(next(iter(dataset)))
+    # print(next(iter(dataset)))
     tokenizer = get_tokenizer('spacy', 'pl_core_news_md')
-    # tokenizer1 = get_tokenizer('basic_english')
+    # tokenizer = get_tokenizer('basic_english')
 
     ########################################
 
     # print(yield_tokens(train_iter))
-    # train_iter1 = AG_NEWS(split='train')
+    # dataset = AG_NEWS(split='train')
 
     vocab = build_vocab_from_iterator(yield_tokens(dataset), specials=["<unk>"])
     vocab.set_default_index(vocab["<unk>"])
 
     text_pipeline = lambda x: vocab(tokenizer(x))
-    label_pipeline = lambda x: int(x) - 1
+    label_pipeline = lambda x: int(x)
 
     ########################################
 
-    print(text_pipeline("super telewizor"))
+    print(text_pipeline("super TV"))
 
     ########################################
     num_class = len(set([label for (label, text) in dataset]))
@@ -175,15 +173,15 @@ if __name__ == "__main__":
                                                accu_val))
         print('-' * 59)
 
-    # print('Checking the results of test dataset.')
-    # accu_test = evaluate(test_dataloader)
-    # print('test accuracy {:8.3f}'.format(accu_test))
-    #
-    # ag_news_label = {1: "Positive",
-    #                  2: "Negative"}
-    #
-    # ex_text_str = "Super mega TV!"
-    #
-    # model = model.to("cpu")
-    #
-    # print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
+    print('Checking the results of test dataset.')
+    accu_test = evaluate(test_dataloader)
+    print('test accuracy {:8.3f}'.format(accu_test))
+
+    ag_news_label = {1: "Positive",
+                     2: "Negative"}
+
+    ex_text_str = "Super mega TV!"
+
+    model = model.to("cpu")
+
+    print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
