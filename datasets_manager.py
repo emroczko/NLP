@@ -54,9 +54,11 @@ def parse_reviews_from_excel(file_name: str) -> [Review]:
     reviews: [Review] = []
 
     file = openpyxl.load_workbook(file_name, data_only=True).active
+    number_of_positive_reviews = 0
 
     for row in file.iter_rows(min_row=2, min_col=2, max_col=3):
         label = resolve_label(row[1].value)
+        number_of_positive_reviews += 1 if label == 'pos' else 0
         review_description = row[0].value \
             .replace("\n", " ") \
             .replace("<br>", " ") \
@@ -65,7 +67,11 @@ def parse_reviews_from_excel(file_name: str) -> [Review]:
 
         reviews.append(Review(review_description, label))
 
-    print("Parsed reviews from excel file")
+    number_of_reviews = len(reviews)
+    number_of_negative_reviews = number_of_reviews - number_of_positive_reviews
+    print("Number of reviews:")
+    print("positive : {} \nnegative: {} \nall: {}"
+          .format(number_of_positive_reviews, number_of_negative_reviews, number_of_reviews))
     return reviews
 
 
@@ -96,7 +102,6 @@ def create_datasets(reviews: [Review], result_files_prefix: str):
     file_name = result_files_prefix + "reviews.json"
     save_as_json(reviews, file_name)
     print("Saved dataset file as {}".format(file_name))
-    print("Number of reviews: {}".format(len(reviews)))
 
 
 if __name__ == "__main__":
