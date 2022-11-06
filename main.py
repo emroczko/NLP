@@ -75,31 +75,36 @@ def collate_batch(batch):
 
 def yield_tokens(data_iter):
     for _, text in data_iter:
-        yield tokenizer1(text)
+        yield tokenizer(text)
+
+
+def predict(text, text_pipeline):
+    with torch.no_grad():
+        text = torch.tensor(text_pipeline(text))
+        output = model(text, torch.tensor([0]))
+        return output.argmax(1).item() + 1
 
 
 if __name__ == "__main__":
-    dp = IterableWrapper(["ProcessedDatasets/train.json"])
+    dp = IterableWrapper(["ProcessedDatasets/reviews.json"])
     dp = FileOpener(dp, mode='b')
     dp = dp.parse_json_files()
-
-    e = ParseCustomDataset(dp)
 
     ########################################
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    train_iter = e
+    train_iter = ParseCustomDataset(dp)
 
     tokenizer = get_tokenizer('spacy', 'pl_core_news_md')
-    tokenizer1 = get_tokenizer('basic_english')
+    # tokenizer1 = get_tokenizer('basic_english')
 
     ########################################
 
-    print(yield_tokens(train_iter))
-    train_iter1 = AG_NEWS(split='train')
+    # print(yield_tokens(train_iter))
+    # train_iter1 = AG_NEWS(split='train')
 
-    vocab = build_vocab_from_iterator(yield_tokens(train_iter1), specials=["<unk>"])
+    vocab = build_vocab_from_iterator(yield_tokens(train_iter), specials=["<unk>"])
     vocab.set_default_index(vocab["<unk>"])
     #
     # print(vocab)
@@ -111,15 +116,15 @@ if __name__ == "__main__":
 
     print(text_pipeline("super telewizor"))
 
-    train_iter1 = AG_NEWS(split='train')
+    # train_iter1 = AG_NEWS(split='train')
 
-    print(train_iter1)
+    # print(train_iter1)
     print(train_iter)
 
-    dataloader = DataLoader(train_iter1, batch_size=8, shuffle=False, collate_fn=collate_batch)
+    dataloader = DataLoader(train_iter, batch_size=8, shuffle=False, collate_fn=collate_batch)
 
     ########################################
-    num_class = len(set([label for (label, text) in train_iter1]))
+    num_class = len(set([label for (label, text) in train_iter]))
     vocab_size = len(vocab)
     emsize = 64
     model = TextClassificationModel(vocab_size, emsize, num_class).to(device)
@@ -166,3 +171,12 @@ if __name__ == "__main__":
     print('Checking the results of test dataset.')
     accu_test = evaluate(test_dataloader)
     print('test accuracy {:8.3f}'.format(accu_test))
+
+    ag_news_label = {1: "Positive",
+                     2: "Negative"}
+
+    ex_text_str = "Super mega TV!"
+
+    model = model.to("cpu")
+
+    print("This is a %s review" % ag_news_label[predict(ex_text_str, text_pipeline)])
