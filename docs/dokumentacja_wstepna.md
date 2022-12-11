@@ -38,14 +38,20 @@ Gotowe datasety są następnie przetwarzane przez docelowy program, w celu treno
 
 
 ## Przyjęty model
+Planujemy wykorzystać dwa modele. 
 
+Pierwszy model to prosty model oparty na regresji. Każde słowo razem ze swoją pozycją będzie podawane na warstwe embedding. Nastepnie tensor otrzymany w ten sposób będzie podawany na model liniowy.
+
+Drugim modelem będzie Bert wykorzystujący bardziej zaawansowane mechanizmy takie jak enkodery i atencja.
 
 ## Założenia
-
+Danymi treningowymi będą dane ściągnięte z Ceneo. Problem klasyfikacji sementycznej będzie rozwiązany dla języka polskiego.
 
 ## Opis eksperymentów
-
-
+Eksperymenty:
+* Sprawdzimy jak ilość danych treningowych wpływa na jakość modelu.
+* Porównamy nasz model z jakimś gotowym modelem z internetu.
+* Porównamy 2 zaproponowane modele pod względem potrzebych zasobów treningowych oraz jakości predykcji.
 
 
 
