@@ -12,7 +12,7 @@ NUM_LINES = {
 
 @_wrap_split_argument(("train", "test"))
 def reviews(root: str, split: Union[Tuple[str], str]):
-    dp = IterableWrapper(["ProcessedDatasets/reviews.json"])
+    dp = IterableWrapper(["all_reviews.json"])
     dp = FileOpener(dp, mode='b')
     dp = dp.parse_json_files()
     return dp.read_dataset().shuffle().set_shuffle(False).sharding_filter()
@@ -30,4 +30,9 @@ class ReviewsCustomDataset(IterDataPipe):
     def __iter__(self):
         for _, raw_json_data in self.source_datapipe:
             for element in raw_json_data:
-                yield 1 if element['label'] == 'pos' else 0, element['text']
+                if element['label'] == 'neg':
+                    yield 0, element['text']
+                elif element['label'] == 'neu':
+                    yield 1, element['text']
+                else:
+                    yield 2, element['text']
