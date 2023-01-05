@@ -2,6 +2,7 @@ import time
 import torch
 from torch.utils.data import DataLoader, random_split
 from torchtext.data import to_map_style_dataset
+
 from reviews_dataset import reviews
 from trainer import Trainer
 
@@ -51,12 +52,15 @@ if __name__ == "__main__":
     print('test accuracy {:8.3f}'.format(accu_test))
 
     reviews_labels = {1: "Negative",
-                      2: "Positive"}
+                      2: "Neutral",
+                      3: "Positive"}
 
-    ex_text_str1 = "Super mega telewizor!"
-    ex_text_str2 = "beznadziejny, fatalny, żenujący, tragedia, tandeta!"
+    ex_text_str1 = "Super mega proszek, bardzo dobry"
+    ex_text_str2 = "Totalny badziew szkoda pieniędzy, beznadziejny, porażka"
+    ex_text_str3 = "Nie domywa ale ładnie pachnie. Zostają smugi"
 
     trainer.model = trainer.model.to("cpu")
 
     print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str1)])
     print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str2)])
+    print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str3)])
