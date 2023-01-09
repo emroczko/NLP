@@ -12,7 +12,7 @@ NUM_LINES = {
 
 @_wrap_split_argument(("train", "test"))
 def reviews(root: str, split: Union[Tuple[str], str]):
-    dp = IterableWrapper(["all_reviews.json"])
+    dp = IterableWrapper([root])
     dp = FileOpener(dp, mode='b')
     dp = dp.parse_json_files()
     return dp.read_dataset().shuffle().set_shuffle(False).sharding_filter()
