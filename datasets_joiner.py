@@ -57,14 +57,14 @@ for filename in os.listdir(directory):
 
 print("Number of reviews:")
 print("positive : {} \nneutral: {} \nnegative: {} \nall: {}"
-      .format(number_of_reviews[Label.POSITIVE], number_of_reviews[Label.NEGATIVE],
-              number_of_reviews[Label.NEUTRAL], sum(number_of_reviews.values())))
+      .format(number_of_reviews[Label.POSITIVE], number_of_reviews[Label.NEUTRAL],
+              number_of_reviews[Label.NEGATIVE], sum(number_of_reviews.values())))
 
 print(f'Sum {len(reviews_array)}')
 
 random.shuffle(reviews_array)
 
-with open("random_reviews.json", 'w') as outfile:
+with open("all_reviews.json", 'w') as outfile:
     json.dump(reviews_array, outfile, default=vars, ensure_ascii=False)
 
 
