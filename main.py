@@ -12,8 +12,7 @@ LR = 5  # learning rate
 BATCH_SIZE = 64  # batch size for training
 
 
-def get_model(trainer: Trainer, dataset_path: str):
-
+def get_model(trainer: Trainer, dataset_path: str, EPOCHS = 10, LR = 5, BATCH_SIZE = 64):
     total_accu = None
     train_iter, test_iter = reviews(root=dataset_path)
     train_dataset = to_map_style_dataset(train_iter)
