@@ -1,0 +1,6 @@
+dataset;accuracy;recall;f1_score;training samples;epoch
+other_reviews.json;0.866;[0.   0.5  0.87];[0.    0.088 0.93 ];1571;1.0
+complete_dataset_ptm.json;0.921;[0.626 0.    0.954];[0.72  0.    0.972];8380;1.0
+complete_dataset_ptm.json;0.624;[0.147 0.1   0.947];[0.201 0.159 0.783];1221;1.0
+complete_dataset_ptm.json;0.919;[0.6   0.    0.956];[0.698 0.    0.972];8380;2.0
+complete_dataset_ptm.json;0.183;[0.101 0.073 1.   ];[0.174 0.129 0.216];1221;2.0
