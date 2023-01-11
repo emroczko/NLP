@@ -5,8 +5,8 @@ from torchtext.data.datasets_utils import _wrap_split_argument
 from torchdata.datapipes.iter import IterableWrapper, FileOpener
 
 NUM_LINES = {
-    "train": 40000,
-    "test": 28012,
+    "train": 7476,
+    "test": 3000,
 }
 
 
