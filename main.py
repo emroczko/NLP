@@ -73,3 +73,4 @@ if __name__ == "__main__":
     print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str2)])
     print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str3)])
     print("This is a %s review" % reviews_labels[trainer.predict(ex_text_str4)])
+    torch.save(trainer.model.state_dict(), "linerModel.pt")
