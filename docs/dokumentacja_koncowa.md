@@ -95,15 +95,35 @@ Eksperymenty:
 ## Trudności i wyzwania
 
 Testowanie berta i tuning hiperparametrów był trudny z powodu długiego czasu treningu modelu. Czasochłonne również było scrapowanie recenzji z internetu.
+Przede wszystkim trudno było znaleźc dobre źródło recenzji. W internecie, wbrew pozorom, nie ma tak dużo recenzji opisowych dot. kubków termicznych, 
+tabletek do zmywarek lub proszków do prania kolorowych ciuchów. Te, które są, są też niestety słabej jakości. Udało nam się wprawdzie zebrać ich nieco ponad 10 tysięcy, 
+ale była to nieustanna walka z ceneo i ich mechanizmami antybotowymi. 
 
-TODO:
-trudny scraping, długo trenuje sie bert, czasochłonny scraping
+Innym problemem była sama biblioteka pytorch - niedawne zmiany doprowadziły do sporego nieładu w dokumentacji biblioteki. Bardzo wiele
+dotychczas znanych i lubianych funkcji zostało oznaczone jako _deprecated_. Chcieliśmy nauczyć się najnowszej wersji tej biblioteki
+i było to przez to bardzo trudne zadanie, ze względu na niemal całkowity brak poradników. Żeby zrozumieć pewne funkcje musieliśmy naprawdę wgłębiać się w kod biblioteki. 
 
+ 
 ## Scraping
-TODO:
-opisać jak działa, co próbowaliśmy zrobić jak powstał finalny dataset
 
-Podczas poszukiwania sposobów scrapowania danych o recenzjach znaleźliśmy sposób jak pobrać dowolną ilość recenzji z danej kategorii z Ceneo. Należy wejść w oferty z danej kategorii np. Sprzęt RTV (https://www.ceneo.pl/Sprzet_RTV) a potem filtrować przedmioty po cenie (https://www.ceneo.pl/Sprzet_RTV;m1;n10.htm). Należy dobrać tak zakres cen aby było dostępnych tylko 50 stron przedmiotów. Następnie przechodząc po kolejnych stronach i ofertach można stosować algorytm scrapingu. Filtracja jest konieczna, ponieważ Ceneo dostarcza tylko 50 stron ofert na raz, nie można otworzyć kolejnych stron z produktami, mimo że widać że w danej kategorii znajduje się ich więcej.
+Wykonano skrypt do scrapowania recenzji z ceneo. Jest to w pełni funkcjonalna aplikacja command line pozwalająca na zapis danych po każdym kroku.
+Jej algorytm jest następujący: użytkownik podaje, jakie kategorie ma przeszukać skrypt. Najpierw skrypt szuka samych PID produktów, przechodząc przez każdą stronę kategorii. 
+PID można zapisać do pliku. Następnie, dla każdego produktu skrypt szuka liczby recenzji opisowych. Tę listę także można zapisać do pliku. Następnie na podstawie liczby recenzji 
+skrypt przechodzi po stronach z recenzjami i pobiera kod źródłowy strony. Na każdej pełnej stronie z recenzjami jest po 10 recenzji. Kod źródłowy strony jest parsowany przez bibliotekę 
+BeautifulSoup, a następnie tworzony jest plik json ze wszystkimi znalezionymi recenzjami, wraz z polem label i score. 
+Ocena, jak i recenzja, pobierana jest z kodu źródłowego strony.
+
+Scraping był trudną częścią projektu, ze względu na uwagę, na ograniczenia Ceneo. Ceneo posiada dobre algorytmy, do odszukiwania botów, tak więc 
+po pewnej pobranej ilości danych, musieliśmy użyć biblioteki Selenium i każdy request musiał się otworzyć w oknie przeglądarki, a do tego, musiały zostać pliki cookies, które mniej więcej
+udowadniały, że nasz skrypt nie jest botem. Sam scraping przez problemy z dostępem do Ceneo zajął około 3 tygodni. Odstęp czasowy między requestami należało ustawić aż na ponad 7 sekund.
+
+Podczas poszukiwania sposobów scrapowania danych o recenzjach znaleźliśmy także kolejne ograniczenie po stronie Ceneo. 
+Mimo że dla danej kategorii może być np. 70 stron produktów to i tak maksymalną stroną, na jaką możemy wejść, jest strona 50. Aby to ominąć, należy wejść w oferty z danej kategorii np. Sprzęt RTV (https://www.ceneo.pl/Sprzet_RTV) a potem filtrować przedmioty po cenie (https://www.ceneo.pl/Sprzet_RTV;m1;n10.htm). 
+Należy dobrać tak zakres cen, aby było dostępnych tylko 50 stron przedmiotów. 
+Następnie, przechodząc po kolejnych stronach i ofertach, można stosować algorytm scrapingu. 
+Filtracja jest konieczna, ponieważ Ceneo dostarcza tylko 50 stron ofert na raz, nie można otworzyć kolejnych stron z produktami, 
+mimo,że widać, że w danej kategorii znajduje się ich więcej.
+Natomiast nie trzeba tego zawsze stosować, gdyż nie każda kategoria produktów ma aż 50 stron. 
 
 ## Eksperymenty
 Podczas eksperymentów porównaliśmy działanie i wyniki modelu liniowego oraz berta. Wykorzystaliśmy zbiór danych z losowymi recenzjami o liczności około 3000 recenzji oraz zbiór danych recenzji proszków do prania, tabletek do zmywarki oraz kubków termicznych w liczności około 10000 recenzji.
@@ -157,11 +177,12 @@ LABEL:pos
 
 
 ## Podsumowanie w skrócie
-Udało się osiągnąć zamierzone efekty. Na stosunkowo małym zbiorze danych udało sie wytrenować dwa dobrze działające modele modele: model liniowy i bert.
+Udało się osiągnąć zamierzone efekty. Na stosunkowo małym zbiorze danych udało się wytrenować dwa dobrze działające modele: model liniowy i bert.
 
-Scraping okazał się problemem nie oczywistym, mimo tej trudności - wyscrapowaliśmy wszystkie opinie o kubkach termicznych, tabletkach do zmywarek i proszkach do prania z Allegro i Ceneo.
+Scraping okazał się problemem nie oczywistym, ale mimo tej trudności wyscrapowaliśmy wszystkie opinie o kubkach termicznych, tabletkach do zmywarek i proszkach do prania z Allegro i Ceneo.
 
-Klasyfikacja opinii neutralnych okazała się trudna, ponieważ opinie neutralne są rzadko wystawiane i zazwyczaj równie dobrze mogłyby być pozytywne lub negatywne. Można by powiedzieć, że ta klasa jest mocno zaszumiona. Ludzie raczej piszą opinie tylko gdy bardzo coś im się podoba lub gdy bardzo coś się nie podoba.
+Klasyfikacja opinii neutralnych okazała się trudna, ponieważ opinie neutralne są rzadko wystawiane i zazwyczaj równie dobrze mogłyby być pozytywne lub negatywne. Można by powiedzieć, że ta klasa jest mocno _zaszumiona_. 
+Ludzie piszą opinie głównie wtedy, kiedy bardzo coś im się podoba lub gdy bardzo coś się nie podoba.
 
 Pomimo licznych trudności udało nam się osiągnąć modele dające dobre wyniki.
 
